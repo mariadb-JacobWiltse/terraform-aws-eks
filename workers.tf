@@ -162,6 +162,7 @@ resource "aws_autoscaling_group" "workers" {
 resource "aws_launch_configuration" "workers" {
   for_each    = var.create_eks ? local.worker_groups_map : {}
   name_prefix = "${coalescelist(aws_eks_cluster.this[*].name, [""])[0]}-${lookup(each.value, "name", each.key)}"
+  vpc_classic_link_security_groups = []
   associate_public_ip_address = lookup(
     each.value,
     "public_ip",
