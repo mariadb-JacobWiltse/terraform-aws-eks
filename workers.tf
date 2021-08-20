@@ -133,12 +133,12 @@ resource "aws_autoscaling_group" "workers" {
       ],
       [
         for tag_key, tag_value in var.tags :
-        {
-          "key"                 = tag_key,
-          "value"               = tag_value,
-          "propagate_at_launch" = "true"
-        }
-        if tag_key != "Name" && !contains([for tag in lookup(var.worker_groups[count.index], "tags", local.workers_group_defaults["tags"]) : tag["key"]], tag_key)
+        map(
+          "key", tag_key,
+          "value", tag_value,
+          "propagate_at_launch", "true"
+        )
+        if tag_key != "Name" && !contains([for tag in lookup(each.value, "tags", local.workers_group_defaults["tags"]) : tag["key"]], tag_key)
       ],
       lookup(
         each.value,
