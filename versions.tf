@@ -3,7 +3,7 @@ terraform {
 
   required_providers {
     aws        = ">= 3.3.0"
-    local      = ">= 1.4"
+    local      = ">= 2.2"
     null       = ">= 2.1"
     template   = ">= 2.1"
     random     = ">= 2.1"
