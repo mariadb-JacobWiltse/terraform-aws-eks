@@ -145,4 +145,96 @@ locals {
     aws_authenticator_additional_args = var.kubeconfig_aws_authenticator_additional_args
     aws_authenticator_env_variables   = var.kubeconfig_aws_authenticator_env_variables
   }) : ""
+
+  userdata = [
+    for i in range(var.create_eks ? local.worker_group_count : 0) : templatefile(
+      lookup(
+        var.worker_groups[i],
+        "userdata_template_file",
+        file(
+          lookup(var.worker_groups[i], "platform", local.workers_group_defaults["platform"]) == "windows"
+          ? "${path.module}/templates/userdata_windows.tpl"
+          : "${path.module}/templates/userdata.sh.tpl"
+        ),
+        merge({
+          platform            = lookup(var.worker_groups[i], "platform", local.workers_group_defaults["platform"])
+          cluster_name        = coalescelist(aws_eks_cluster.this[*].name, [""])[0]
+          endpoint            = coalescelist(aws_eks_cluster.this[*].endpoint, [""])[0]
+          cluster_auth_base64 = coalescelist(aws_eks_cluster.this[*].certificate_authority[0].data, [""])[0]
+          pre_userdata = lookup(
+            var.worker_groups[i],
+            "pre_userdata",
+            local.workers_group_defaults["pre_userdata"],
+          )
+          additional_userdata = lookup(
+            var.worker_groups[i],
+            "additional_userdata",
+            local.workers_group_defaults["additional_userdata"],
+          )
+          bootstrap_extra_args = lookup(
+            var.worker_groups[i],
+            "bootstrap_extra_args",
+            local.workers_group_defaults["bootstrap_extra_args"],
+          )
+          kubelet_extra_args = lookup(
+            var.worker_groups[i],
+            "kubelet_extra_args",
+            local.workers_group_defaults["kubelet_extra_args"],
+          )
+          },
+          lookup(
+            var.worker_groups[i],
+            "userdata_template_extra_args",
+            local.workers_group_defaults["userdata_template_extra_args"]
+          )
+        )
+      )
+    )
+  ]
+
+  launch_template_userdata = [
+    for i in range(var.create_eks ? local.worker_group_launch_template_count : 0) : templatefile(
+      lookup(
+        var.worker_groups_launch_template[count.index],
+        "userdata_template_file",
+        file(
+          lookup(var.worker_groups_launch_template[count.index], "platform", local.workers_group_defaults["platform"]) == "windows"
+          ? "${path.module}/templates/userdata_windows.tpl"
+          : "${path.module}/templates/userdata.sh.tpl"
+        )
+      ),
+      merge({
+        platform            = lookup(var.worker_groups_launch_template[count.index], "platform", local.workers_group_defaults["platform"])
+        cluster_name        = coalescelist(aws_eks_cluster.this[*].name, [""])[0]
+        endpoint            = coalescelist(aws_eks_cluster.this[*].endpoint, [""])[0]
+        cluster_auth_base64 = coalescelist(aws_eks_cluster.this[*].certificate_authority[0].data, [""])[0]
+        pre_userdata = lookup(
+          var.worker_groups_launch_template[count.index],
+          "pre_userdata",
+          local.workers_group_defaults["pre_userdata"],
+        )
+        additional_userdata = lookup(
+          var.worker_groups_launch_template[count.index],
+          "additional_userdata",
+          local.workers_group_defaults["additional_userdata"],
+        )
+        bootstrap_extra_args = lookup(
+          var.worker_groups_launch_template[count.index],
+          "bootstrap_extra_args",
+          local.workers_group_defaults["bootstrap_extra_args"],
+        )
+        kubelet_extra_args = lookup(
+          var.worker_groups_launch_template[count.index],
+          "kubelet_extra_args",
+          local.workers_group_defaults["kubelet_extra_args"],
+        )
+        },
+        lookup(
+          var.worker_groups_launch_template[count.index],
+          "userdata_template_extra_args",
+          local.workers_group_defaults["userdata_template_extra_args"]
+        )
+      )
+    )
+  ]
 }
